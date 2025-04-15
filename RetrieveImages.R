@@ -63,8 +63,8 @@ pr2<- pr1[pr1$publisher=="Museum of Comparative Zoology, Harvard University",]
 #gatoRs
 df <- gators_download(synonyms.list = c("Pontia occidentalis"), write.file = TRUE, filename = "data/idigbio_gbif_Poccidentalis.csv")
 
-#==========================
-### Download thumbnails by URL
+#=====================================
+### Download images by URL
 
 #set download location
 #toggle between desktop (y) and laptop (n)
@@ -74,49 +74,70 @@ desktop<- "n"
 if(desktop=="y") location <- "/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/images/"
 if(desktop=="n") location <- "/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/images/"
 
+#setwd to access image data
+if(desktop=="y") setwd("/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/")
+if(desktop=="n") setwd("/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/")
+
 #Pontia occidentalis
 #SCAN
 imgs <- read.csv("data/SCAN_Poccidentalis/images.csv")
-
-table(imgs$Owner)
 
 #imgs<- imgs[imgs$Owner=="Yale University",]
 #imgs<- imgs[imgs$Owner=="Rights for individual observations belong to the individual observers. In jurisdictions where collections of data are are considered intellectual property, the rights holder of this collection is the California Academy of Sciences.",]
 
 #find and remove problematic images
 imgs$valid<-"yes"
-imgs$valid[grep("default", imgs$accessURI)]<-"no"
+#imgs$valid[grep("default", imgs$accessURI)]<-"no"
 imgs$valid[grep("original", imgs$accessURI)]<-"no"
 imgs$valid[grep("inaturalist", imgs$accessURI)]<-"no"
-inds<- which(imgs$valid=="yes")
+#inds<- which(imgs$valid=="yes")
+imgs<- imgs[which(imgs$valid=="yes"),]
 
-for(i in inds){
-  try(download.file(imgs$thumbnailAccessURI[i], paste(location,"scan_po/",str_extract(imgs$thumbnailAccessURI[i], "([^/]+$)"),".jpg",sep=""),
+#make download id
+imgs$downloadID<- paste("scan_po_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/scan_po.csv")
+
+#  try(download.file(imgs$accessURI[i], paste(location,"scan_po/",str_extract(imgs$thumbnailAccessURI[i], "([^/]+$)"),".jpg",sep=""),
+#                    cacheOK = FALSE, mode = "wb"))
+
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$accessURI[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                 cacheOK = FALSE, mode = "wb"))
 }
 
+#-----
 #gbif
 imgs_gb<- read.delim("data/gbif/Poccidentalis/multimedia.txt", header = TRUE, sep = "\t")
 
 #find and remove problematic images
 imgs_gb$valid<-"yes"
-imgs_gb$valid[grep("default", imgs_gb$identifier)]<-"no"
+#imgs_gb$valid[grep("default", imgs_gb$identifier)]<-"no"
 imgs_gb$valid[grep("original", imgs_gb$identifier)]<-"no"
 imgs_gb$valid[grep("inaturalist", imgs_gb$identifier)]<-"no"
 imgs_gb$valid[grep("e-butterfly", imgs_gb$identifier)]<-"no"
 imgs_gb$valid[grep("bugguide.net", imgs_gb$identifier)]<-"no"
-inds<- which(imgs_gb$valid=="yes")
+#inds<- which(imgs_gb$valid=="yes")
+imgs<- imgs_gb[which(imgs_gb$valid=="yes"),]
+
+#make download id
+imgs$downloadID<- paste("gbif_po_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/gbif_po.csv")
 
 grep("Preview", imgs_gb$identifier) #** fix overwrite
 
 #check duplicate institutions
 match(unique(imgs$Owner), unique(imgs_gb$publisher))
 
-for(i in inds){
-  try(download.file(imgs_gb$identifier[i], paste(location,"gbif_po/",str_extract(imgs_gb$identifier[i], "([^/]+$)"),".jpg",sep=""),
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$identifier[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                     cacheOK = FALSE, mode = "wb"))
 }
 
+#-----
 #idigbio
 imgs_db <- read.csv("data/idigbio_Poccidentalis/multimedia.csv")
 
@@ -135,10 +156,17 @@ dups1<- unique(imgs_gb$publisher)[!is.na(match1)]
 dup.ids<- occ$coreid[which(occ$dcterms.rightsHolder %in% dups)]
 imgs_db$valid[which(imgs_db$coreid %in% dup.ids)]<-"duplicate"
 
-inds<- which(imgs_db$valid=="yes")
+#inds<- which(imgs_db$valid=="yes")
+imgs<- imgs_db[which(imgs_db$valid=="yes"),]
 
-for(i in inds){
-  try(download.file(imgs_db$ac.accessURI[i], paste(location,"idigbio_po/",str_extract(imgs_db$ac.accessURI[i], "([^/]+$)"),".jpg",sep=""),
+#make download id
+imgs$downloadID<- paste("idigbio_po_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/idigbio_po.csv")
+
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$ac.accessURI[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                     cacheOK = FALSE, mode = "wb"))
 }
 #** Some download errors
@@ -154,13 +182,37 @@ imgs$valid[grep("default", imgs$accessURI)]<-"no"
 imgs$valid[grep("original", imgs$accessURI)]<-"no"
 imgs$valid[grep("inaturalist", imgs$accessURI)]<-"no"
 inds<- which(imgs$valid=="yes")
+imgs<- imgs[which(imgs$valid=="yes"),]
 
-for(i in inds){
-  try(download.file(imgs$thumbnailAccessURI[i], paste(location,"scan_pr/",str_extract(imgs$thumbnailAccessURI[i], "([^/]+$)"),".jpg",sep=""),
+#make download id
+imgs$downloadID<- paste("scan_pr_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/scan_pr.csv")
+
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$accessURI[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                     cacheOK = FALSE, mode = "wb"))
-} 
-#** Some download errors
+}
 
+#check duplicates
+scan_pr<- read.csv("data/ImageList/scan_pr.csv")
+#find duplicated links
+inds<- which(duplicated(scan_pr$accessURI))
+#files to delete
+df<- scan_pr[inds,"downloadID"]
+
+setwd(paste(location,"specimens/",sep="") )
+for(i in 1:length(df)){
+fn<- df[i]
+#Check its existence
+if (file.exists(fn)) {
+  #Delete file if it exists
+  file.remove(fn)
+}
+}
+
+#-----
 #idigbio
 imgs_db <- read.csv("data/idigbio_Prapae/multimedia.csv")
 
@@ -177,15 +229,22 @@ dups<- unique(imgs$Owner)[!is.na(match1)]
 dup.ids<- occ$coreid[which(occ$dcterms.rightsHolder %in% dups)]
 imgs_db$valid[which(imgs_db$coreid %in% dup.ids)]<-"duplicate"
 
-inds<- which(imgs_db$valid=="yes")
+imgs<- imgs_db[which(imgs_db$valid=="yes"),]
 
-for(i in inds){
-  try(download.file(imgs_db$ac.accessURI[i], paste(location,"idigbio_pr/",str_extract(imgs_db$ac.accessURI[i], "([^/]+$)"),".jpg",sep=""),
+#make download id
+imgs$downloadID<- paste("idigbio_pr_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/idigbio_pr.csv")
+
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$ac.accessURI[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                     cacheOK = FALSE, mode = "wb"))
 }
+#-----
 
 #gbif
-imgs_gb<- read.delim("/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/data/gbif_Prapae/multimedia.txt", header = TRUE, sep = "\t")
+imgs_gb<- read.delim("data/gbif/Prapae/multimedia.txt", header = TRUE, sep = "\t")
 
 #find and remove problematic images
 imgs_gb$valid<-"yes"
@@ -204,18 +263,26 @@ match(unique(imgs$Owner), unique(imgs_gb$publisher))
 match1<- match(unique(imgs_gb$publisher), unique(occ$dcterms.rightsHolder))
 dups1<- unique(imgs_gb$publisher)[!is.na(match1)]
 
-inds<- which(imgs_gb$valid=="yes")
+imgs<- imgs_gb[which(imgs_gb$valid=="yes"),]
+
+#make download id
+imgs$downloadID<- paste("gbif_pr_img", 1:nrow(imgs), ".jpg", sep="")
+
+#write out
+write.csv(imgs, "data/ImageList/gbif_pr.csv")
 
 grep("Preview", imgs_gb$identifier) #** fix overwrite
 
-#imgs_gb[grep("7272639", imgs_gb$identifier),]
+#check duplicate institutions
+match(unique(imgs$Owner), unique(imgs_gb$publisher))
 
-for(i in inds[1:1000]){
-  try(download.file(imgs_gb$identifier[i], paste(location,"gbif_pr/",str_extract(imgs_gb$identifier[i], "([^/]+$)"),".jpg",sep=""),
+for(i in 1:nrow(imgs)){
+  try(download.file(imgs$identifier[i], paste(location,"specimens/",imgs$downloadID[i],sep=""),
                     cacheOK = FALSE, mode = "wb"))
 }
 
 #----------------
+#NOT DOWNLOADED
 #Download from Yale
 
 #idigbio
@@ -240,6 +307,15 @@ for(i in inds){
 #=========================================
 #Combine Data
 
+#read records with ids
+#P. occidentalis
+d.scan.po <-read.csv("data/ImageList/scan_po.csv")
+d.gbif.po <-read.csv("data/ImageList/gbif_po.csv")
+d.idig.po <-read.csv("data/ImageList/idigbio_po.csv")
+d.scan.pr <-read.csv("data/ImageList/scan_pr.csv")
+d.gbif.pr <-read.csv("data/ImageList/gbif_pr.csv")
+d.idig.pr <-read.csv("data/ImageList/idigbio_pr.csv")
+
 if(desktop=="y") setwd("/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/")
 if(desktop=="n") setwd("/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/")
 
@@ -248,46 +324,24 @@ if(desktop=="n") setwd("/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projec
 dat.po<- read.delim("data/gbif/Poccidentalis/occurrence.txt", header = TRUE, sep = "\t")
 dat.po<- dat.po[,c("gbifID","eventDate","decimalLatitude","decimalLongitude")]   
 
-dat.pom<- read.delim("data/gbif/Poccidentalis/multimedia.txt", header = TRUE, sep = "\t")
-dat.pom$valid<-"yes"
-dat.pom$valid[grep("default", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("original", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("inaturalist", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("e-butterfly", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("bugguide.net", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("images.ala.org.au", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("www.artsobservasjoner.no", dat.pom$identifier)]<-"no"
-dat.pom$valid[grep("observation.org", dat.pom$identifier)]<-"no"
-#drop invald
-dat.pom<- dat.pom[-which(dat.pom$valid=="no"),]
-
-match1<- match(dat.pom$gbifID, dat.po$gbifID) 
+match1<- match(dat.po$gbifID, d.gbif.po$gbifID) 
 dat.po$link<- NA
-dat.po$link[match1]<- dat.pom$identifier[match1]
+dat.po$link<- d.gbif.po$identifier[match1]
+dat.po$downloadID<- d.gbif.po$downloadID[match1]
+dat.po<- dat.po[which(!is.na(dat.po$downloadID)),]
 
 #pr
 dat.pr<- read.delim("data/gbif/Prapae/occurrence.txt", header = TRUE, sep = "\t")
 dat.pr<- dat.pr[,c("gbifID","eventDate","decimalLatitude","decimalLongitude")]   
 
-dat.prm<- read.delim("data/gbif/Prapae/multimedia.txt", header = TRUE, sep = "\t")
-dat.prm$valid<-"yes"
-dat.prm$valid[grep("default", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("original", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("inaturalist", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("e-butterfly", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("bugguide.net", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("images.ala.org.au", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("www.artsobservasjoner.no", dat.prm$identifier)]<-"no"
-dat.prm$valid[grep("observation.org", dat.prm$identifier)]<-"no"
-#drop invald
-dat.prm<- dat.prm[-which(dat.prm$valid=="no"),]
-
-match1<- match(dat.prm$gbifID, dat.pr$gbifID) 
+match1<- match(dat.pr$gbifID, d.gbif.pr$gbifID) 
 dat.pr$link<- NA
-dat.pr$link[match1]<- dat.prm$identifier[match1]
+dat.pr$link<- d.gbif.pr$identifier[match1]
+dat.pr$downloadID<- d.gbif.pr$downloadID[match1]
+dat.pr<- dat.pr[which(!is.na(dat.pr$downloadID)),]
 
-names(dat.po)<- c("id","date","lat","lon","link")
-names(dat.pr)<- c("id","date","lat","lon","link")
+names(dat.po)<- c("id","date","lat","lon","link","downloadID")
+names(dat.pr)<- c("id","date","lat","lon","link","downloadID")
 
 #format dates
 #drop 1800 dates
@@ -331,12 +385,12 @@ latlon<- matrix(unlist(latlon), ncol=2, byrow=TRUE)
 coord<- matrix(NA, nrow=nrow(dat.po), ncol=2)
 coord[inds,1] <- as.numeric(sub("lat: ", "", latlon[,1]))
 coord[inds,2] <- as.numeric(sub(" lon: ", "", latlon[,2]))
-dat.po= cbind(dat.po[,1:2],coord)
+dat.po= as.data.frame(cbind(dat.po[,1:2],coord))
 
-dat.pom<- read.csv("data/idigbio_Poccidentalis/multimedia.csv")
-match1<- match(dat.pom$coreid, dat.po$coreid) 
-dat.po$link<- NA
-dat.po$link[match1]<- dat.pom$ac.accessURI[match1]
+match1<- match(dat.po$coreid, d.idig.po$coreid) 
+dat.po$link<- d.idig.po$identifier[match1] ### FIX?
+dat.po$downloadID<- d.idig.po$downloadID[match1]
+dat.po<- dat.po[which(!is.na(dat.po$downloadID)),]
 
 #--
 dat.pr<- read.csv("data/idigbio_Prapae/occurrence.csv")
@@ -352,12 +406,14 @@ coord[inds,2] <- as.numeric(sub(" lon: ", "", latlon[,2]))
 dat.pr= cbind(dat.pr[,1:2],coord)
 
 dat.prm<- read.csv("data/idigbio_Prapae/multimedia.csv")
-match1<- match(dat.prm$coreid, dat.pr$coreid) 
+match1<- match(dat.pr$coreid, d.idig.pr$coreid) 
 dat.pr$link<- NA
-dat.pr$link[match1]<- dat.prm$ac.accessURI
+dat.pr$link<- dat.prm$ac.accessURI[match1]
+dat.pr$downloadID<- d.idig.pr$downloadID[match1]
+dat.pr<- dat.pr[which(!is.na(dat.pr$downloadID)),]
 
-names(dat.po)<- c("id","date","lat","lon","link")
-names(dat.pr)<- c("id","date","lat","lon","link")
+names(dat.po)<- c("id","date","lat","lon","link","downloadID")
+names(dat.pr)<- c("id","date","lat","lon","link","downloadID")
 
 #format dates
 #ditch time
@@ -385,31 +441,20 @@ dat.pr.all<- rbind(dat.pr.all, dat.pr)
 #SCAN
 dat.po <- read.csv("data/SCAN_Poccidentalis/occurrences.csv")
 dat.po<- dat.po[,c("id","eventDate","startDayOfYear",'year','month','day','decimalLatitude','decimalLongitude')]  
-#find and remove problematic images
-dat.po$valid<-"yes"
-dat.po$valid[grep("default", dat.po$accessURI)]<-"no"
-dat.po$valid[grep("original", dat.po$accessURI)]<-"no"
-dat.po$valid[grep("inaturalist", dat.po$accessURI)]<-"no"
-dat.po<- dat.po[which(dat.po$valid=="yes"),]
 
-dat.pom <- read.csv("data/SCAN_Poccidentalis/images.csv")
-match1<- match(dat.pom$coreid, dat.po$id) 
-dat.po$link<- NA
-dat.po$link[match1]<- dat.pom$accessURI
+match1<- match(dat.po$id, d.scan.po$coreid) 
+dat.po$link<- d.scan.po$identifier[match1] 
+dat.po$downloadID<- d.scan.po$downloadID[match1]
+dat.po<- dat.po[which(!is.na(dat.po$downloadID)),]
 
 dat.pr <- read.csv("data/SCAN_Prapae/occurrences.csv")
 dat.pr<- dat.pr[,c("id","eventDate","startDayOfYear",'year','month','day','decimalLatitude','decimalLongitude')]  
-#find and remove problematic images
-dat.pr$valid<-"yes"
-dat.pr$valid[grep("default", dat.pr$accessURI)]<-"no"
-dat.pr$valid[grep("original", dat.pr$accessURI)]<-"no"
-dat.pr$valid[grep("inaturalist", dat.pr$accessURI)]<-"no"
-dat.pr<- dat.pr[which(dat.pr$valid=="yes"),]
 
-dat.prm <- read.csv("data/SCAN_Prapae/images.csv")
-match1<- match(dat.prm$coreid, dat.pr$id) 
+match1<- match(dat.pr$id, d.idig.pr$coreid) 
 dat.pr$link<- NA
-dat.pr$link[match1]<- dat.prm$accessURI
+dat.pr$link<- dat.prm$ac.accessURI[match1]
+dat.pr$downloadID<- d.idig.pr$downloadID[match1]
+dat.pr<- dat.pr[which(!is.na(dat.pr$downloadID)),]
 
 #add columns
 dat.po.all$doy<- NA
@@ -462,6 +507,26 @@ dat.po.all<- dat.po.all[-grep("default.jpg", dat.po.all$image),]
 dat.pr.all<- dat.pr.all[-grep("default.jpg", dat.pr.all$image),]
 
 #write code
-write.csv(dat.po.all, "out/po_image_data.csv")
-write.csv(dat.pr.all, "out/pr_image_data.csv")
+write.csv(dat.po.all, "out/po_image_data_wID.csv")
+write.csv(dat.pr.all, "out/pr_image_data_wID.csv")
+
+#-------------------------
+#add image name
+dat.po.all <-read.csv("out/po_image_data.csv")
+dat.pr.all <-read.csv("out/pr_image_data.csv")
+
+#read image info
+#P. occidentalis
+dat1 <-read.csv("data/ImageList/scan_po.csv")
+dat2 <-read.csv("data/ImageList/gbif_po.csv")
+dat3 <-read.csv("data/ImageList/idigbio_po.csv")
+
+dat1<- dat1[,c('coreid', 'downloadID')]
+dat2<- dat2[,c('gbifID', 'downloadID')]
+colnames(dat2)[1]<- c("coreid")
+dat3<- dat3[,c('coreid', 'downloadID')]
+dat.po.n<-rbind(dat1,dat2,dat3)
+
+match1<- match(dat.po.n$coreid, dat.po.all$id)
+
 
