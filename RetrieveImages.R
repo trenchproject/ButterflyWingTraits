@@ -388,8 +388,10 @@ coord[inds,2] <- as.numeric(sub(" lon: ", "", latlon[,2]))
 dat.po= as.data.frame(cbind(dat.po[,1:2],coord))
 
 match1<- match(dat.po$coreid, d.idig.po$coreid) 
-dat.po$link<- d.idig.po$identifier[match1] ### FIX?
-dat.po$downloadID<- d.idig.po$downloadID[match1]
+dat.po$link<-NA
+dat.po$link[which(!is.na(match1))]<- d.idig.po$ac.accessURI[na.omit(match1)]
+dat.po$downloadID<-NA
+dat.po$downloadID[which(!is.na(match1))]<- d.idig.po$downloadID[na.omit(match1)]
 dat.po<- dat.po[which(!is.na(dat.po$downloadID)),]
 
 #--
@@ -405,11 +407,11 @@ coord[inds,1] <- as.numeric(sub("lat: ", "", latlon[,1]))
 coord[inds,2] <- as.numeric(sub(" lon: ", "", latlon[,2]))
 dat.pr= cbind(dat.pr[,1:2],coord)
 
-dat.prm<- read.csv("data/idigbio_Prapae/multimedia.csv")
 match1<- match(dat.pr$coreid, d.idig.pr$coreid) 
-dat.pr$link<- NA
-dat.pr$link<- dat.prm$ac.accessURI[match1]
-dat.pr$downloadID<- d.idig.pr$downloadID[match1]
+dat.pr$link<-NA
+dat.pr$link[which(!is.na(match1))]<- d.idig.pr$ac.accessURI[na.omit(match1)]
+dat.pr$downloadID<-NA
+dat.pr$downloadID[which(!is.na(match1))]<- d.idig.pr$downloadID[na.omit(match1)]
 dat.pr<- dat.pr[which(!is.na(dat.pr$downloadID)),]
 
 names(dat.po)<- c("id","date","lat","lon","link","downloadID")
@@ -443,35 +445,27 @@ dat.po <- read.csv("data/SCAN_Poccidentalis/occurrences.csv")
 dat.po<- dat.po[,c("id","eventDate","startDayOfYear",'year','month','day','decimalLatitude','decimalLongitude')]  
 
 match1<- match(dat.po$id, d.scan.po$coreid) 
-dat.po$link<- d.scan.po$identifier[match1] 
-dat.po$downloadID<- d.scan.po$downloadID[match1]
+dat.po$link<-NA
+dat.po$link[which(!is.na(match1))]<- d.scan.po$accessURI[na.omit(match1)]
+dat.po$downloadID<-NA
+dat.po$downloadID[which(!is.na(match1))]<- d.scan.po$downloadID[na.omit(match1)]
 dat.po<- dat.po[which(!is.na(dat.po$downloadID)),]
 
 dat.pr <- read.csv("data/SCAN_Prapae/occurrences.csv")
 dat.pr<- dat.pr[,c("id","eventDate","startDayOfYear",'year','month','day','decimalLatitude','decimalLongitude')]  
 
-match1<- match(dat.pr$id, d.idig.pr$coreid) 
-dat.pr$link<- NA
-dat.pr$link<- dat.prm$ac.accessURI[match1]
-dat.pr$downloadID<- d.idig.pr$downloadID[match1]
+match1<- match(dat.pr$id, d.scan.pr$coreid) 
+dat.pr$link<-NA
+dat.pr$link[which(!is.na(match1))]<- d.scan.pr$accessURI[na.omit(match1)]
+dat.pr$downloadID<-NA
+dat.pr$downloadID[which(!is.na(match1))]<- d.scan.pr$downloadID[na.omit(match1)]
 dat.pr<- dat.pr[which(!is.na(dat.pr$downloadID)),]
 
-#add columns
-dat.po.all$doy<- NA
-dat.po.all$year<- NA
-dat.po.all$month<- NA
-dat.po.all$day<- NA
+dat.po<- dat.po[,c("id","eventDate","decimalLatitude","decimalLongitude","link","downloadID","startDayOfYear","year","month","day")]
+colnames(dat.po)<-c("id","date","lat","lon","link","downloadID","doy","year","month","day" )
 
-dat.pr.all$doy<- NA
-dat.pr.all$year<- NA
-dat.pr.all$month<- NA
-dat.pr.all$day<- NA
-
-dat.po<- dat.po[,c("id","eventDate","decimalLatitude","decimalLongitude","link","startDayOfYear","year","month","day")]
-colnames(dat.po)<-c("id","date","lat","lon","link","doy","year","month","day" )
-
-dat.pr<- dat.pr[,c("id","eventDate","decimalLatitude","decimalLongitude","link","startDayOfYear","year","month","day")]
-colnames(dat.pr)<-c("id","date","lat","lon","link","doy","year","month","day" )
+dat.pr<- dat.pr[,c("id","eventDate","decimalLatitude","decimalLongitude","link","downloadID","startDayOfYear","year","month","day")]
+colnames(dat.pr)<-c("id","date","lat","lon","link","downloadID","doy","year","month","day" )
 
 dat.po$provider<-"scan"
 dat.pr$provider<-"scan"
@@ -494,39 +488,21 @@ dat.pr<- dat.pr[which(dat.pr$valid=="yes"),]
 #-----------------------
 #write out
 
-#limit to images
-dat.po.all<- dat.po.all[which(!is.na(dat.po.all$link)),]
-dat.pr.all<- dat.pr.all[which(!is.na(dat.pr.all$link)),]
+dat.po.all$species<- "P. occidentalis"
+dat.pr.all$species<- "P. rapae"
 
-#image name
-dat.po.all$image<- paste(str_extract(dat.po.all$link, "([^/]+$)"),".jpg",sep="")
-dat.pr.all$image<- paste(str_extract(dat.pr.all$link, "([^/]+$)"),".jpg",sep="")
+dat.all<- rbind(dat.po.all, dat.pr.all)
+#write out
+"/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/"
 
-#drop default images
-dat.po.all<- dat.po.all[-grep("default.jpg", dat.po.all$image),]
-dat.pr.all<- dat.pr.all[-grep("default.jpg", dat.pr.all$image),]
+##image name
+#dat.po.all$image<- paste(str_extract(dat.po.all$link, "([^/]+$)"),".jpg",sep="")
+#dat.pr.all$image<- paste(str_extract(dat.pr.all$link, "([^/]+$)"),".jpg",sep="")
 
-#write code
-write.csv(dat.po.all, "out/po_image_data_wID.csv")
-write.csv(dat.pr.all, "out/pr_image_data_wID.csv")
+#write image list
+write.csv(dat.all, "out/WhiteButterfliesRenamed_list.csv")
 
 #-------------------------
-#add image name
-dat.po.all <-read.csv("out/po_image_data.csv")
-dat.pr.all <-read.csv("out/pr_image_data.csv")
 
-#read image info
-#P. occidentalis
-dat1 <-read.csv("data/ImageList/scan_po.csv")
-dat2 <-read.csv("data/ImageList/gbif_po.csv")
-dat3 <-read.csv("data/ImageList/idigbio_po.csv")
-
-dat1<- dat1[,c('coreid', 'downloadID')]
-dat2<- dat2[,c('gbifID', 'downloadID')]
-colnames(dat2)[1]<- c("coreid")
-dat3<- dat3[,c('coreid', 'downloadID')]
-dat.po.n<-rbind(dat1,dat2,dat3)
-
-match1<- match(dat.po.n$coreid, dat.po.all$id)
 
 
