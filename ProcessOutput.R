@@ -3,7 +3,7 @@ library(reshape2)
 library(sjPlot)
 library(viridis)
 
-desktop<- "n"
+desktop<- "y"
 
 if(desktop=="y") setwd("/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/out/")
 if(desktop=="n") setwd("/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/out/")
@@ -39,6 +39,7 @@ bdatm<- merge(x=bdat, y=gray, by = "downloadID.m", all=TRUE)
 
 match1<- match(gray$downloadID.m, bdat$downloadID.m)
 gray$downloadID.m[is.na(match1)]
+#some final digits dropped when downloading images. Mechanism unclear.
 
 #lots of images not downloaded?
 bdat<- bdatm[which(!is.na(bdatm$image)),]      
@@ -101,11 +102,11 @@ gdat<- bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[2] & bdat.g
 gdat<- gdat[, c("grayscale","doy","lat","wing","side","year","lr")]
 gdat<- na.omit(gdat)
 
-plot1<- ggplot(bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[1]),], aes(x=doy, y=grayscale, color=lr)) + 
+plot1<- ggplot(bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[2]),], aes(x=doy, y=grayscale, color=lr)) + 
   facet_grid(wing~side)+ ylab("grayscale (%)")+ xlab("day of year")+
   geom_point()+geom_smooth(method="lm")+theme_bw(base_size = 16)+scale_colour_manual(values=colors)
 
-pdf("Poccidentalis_gray.pdf",height = 8, width = 8)
+pdf("Prape_gray.pdf",height = 8, width = 8)
 plot1
 dev.off()
 
@@ -125,16 +126,29 @@ pm.plot
 dev.off()
 
 #length
-ggplot(bdat.l[which(bdat.l$species== c("P. occidentalis","P. rapae")[2]),], aes(x=doy, y=length, color=lr)) + 
-  facet_grid(wing~side)+
+plot2<- ggplot(bdat.l[which(bdat.l$species== c("P. occidentalis","P. rapae")[2]),], aes(x=year, y=length, color=lr)) + 
+  facet_grid(wing~side)+ylab("length (pixels)")+
   geom_point()+geom_smooth(method="lm")+theme_bw()+scale_colour_manual(values=colors)
+
+pdf("Prape_length.pdf",height = 8, width = 8)
+plot2
+dev.off()
 
 mod= lm(length ~ doy*lat*wing*year+lr, data= bdat.l[which(bdat.l$species== c("P. occidentalis","P. rapae")[2] & bdat.g$side=="dorsal"),]) 
 anova(mod)
 
-plot_model(mod, type = "pred", terms = c("doy", "lat", "wing"), show.data=TRUE)
+mod= lm(length ~ doy*lat*year+lr, data= bdat.l[which(bdat.l$species== c("P. occidentalis","P. rapae")[2] & bdat.g$side=="dorsal" & bdat.g$wing=="hindwing"),]) 
+anova(mod)
 
-plot_model(mod, type = "pred", terms = c("doy","year"), show.data=TRUE)
-plot_model(mod, type = "pred", terms = c("doy","lat"), show.data=TRUE)
-plot_model(mod, type = "pred", terms = c("lat","year"), show.data=TRUE)
+pm.plot<- plot_model(mod, type = "pred", terms = c("year", "lat", "wing"), show.data=TRUE)
+
+pm.plot<- pm.plot+ theme_bw(base_size=18)+ 
+  scale_color_viridis_c()+
+  scale_fill_viridis_c()
+
+pdf("Prapae_lengthmod.pdf",height = 5, width = 8)
+pm.plot
+dev.off()
+
+plot_model(mod, type = "pred", terms = c("year","lat"), show.data=TRUE)
 plot_model(mod, type = "pred", terms = c("wing","year"), show.data=TRUE)
