@@ -3,7 +3,7 @@ library(reshape2)
 library(sjPlot)
 library(viridis)
 
-desktop<- "y"
+desktop<- "n"
 
 if(desktop=="y") setwd("/Users/laurenbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/out/")
 if(desktop=="n") setwd("/Users/lbuckley/Google Drive/Shared drives/TrEnCh/Projects/WARP/Projects/WingColoration/out/")
@@ -37,6 +37,9 @@ bdat$downloadID.m<- gsub(".jpg", "", bdat$downloadID)
 #merge data
 bdatm<- merge(x=bdat, y=gray, by = "downloadID.m", all=TRUE)
 
+match1<- match(gray$downloadID.m, bdat$downloadID.m)
+gray$downloadID.m[is.na(match1)]
+
 #lots of images not downloaded?
 bdat<- bdatm[which(!is.na(bdatm$image)),]      
 
@@ -56,10 +59,10 @@ bdat.l <- melt(bdat[,c("downloadID.m","date","lat","lon","doy","year","species",
 bdat.g <- melt(bdat[,c("downloadID.m","date","lat","lon","doy","year","species","side",'gray_rfw', 'gray_lfw', 'gray_rhw', 'gray_lhw')], 
                id.vars = c("downloadID.m","date","lat","lon","doy","year","species","side"), variable.name = "label", value.name="gray")
 #code wings
-bdat.l$wing<- "fw"
-bdat.l$wing[grep("hw", bdat.l$label)]<- "hw"
-bdat.g$wing<- "fw"
-bdat.g$wing[grep("hw", bdat.l$label)]<- "hw"
+bdat.l$wing<- "forewing"
+bdat.l$wing[grep("hw", bdat.l$label)]<- "hindwing"
+bdat.g$wing<- "forewing"
+bdat.g$wing[grep("hw", bdat.l$label)]<- "hindwing"
 
 bdat.l$lr<- "left"
 bdat.l$lr[grep("_r", bdat.l$label)]<- "right"
@@ -70,19 +73,25 @@ bdat.g$lr[grep("_r", bdat.g$label)]<- "right"
 bdat.g$grayscale= (255-bdat.g$gray)/255
 
 #drop NA side
-bdat.g <- bdat.g[-is.na(bdat.g$side),]
-bdat.l <- bdat.l[-is.na(bdat.l$side),]
+bdat.g$side<- factor(bdat.g$side, levels=c("dorsal","ventral"))
+bdat.l$side<- factor(bdat.l$side, levels=c("dorsal","ventral"))
+bdat.g <- bdat.g[!is.na(bdat.g$side),]
+bdat.l <- bdat.l[!is.na(bdat.l$side),]
 
 bdat.g$wing<- as.factor(bdat.g$wing)
 bdat.l$wing<- as.factor(bdat.l$wing)
 bdat.g$lr<- as.factor(bdat.g$lr)
 bdat.l$lr<- as.factor(bdat.l$lr)
-bdat.g$side<- factor(bdat.g$side, levels=c("dorsal","ventral"))
-bdat.l$side<- factor(bdat.l$side, levels=c("dorsal","ventral"))
 
 #fix negative latitudes?
 bdat.g$lat<- abs(bdat.g$lat)
 bdat.l$lat<- abs(bdat.l$lat)
+
+#set doy of 1 or 365 to zero
+bdat.g$doy[bdat.g$doy==1]<-NA
+bdat.g$doy[bdat.g$doy==365]<-NA
+bdat.l$doy[bdat.l$doy==1]<-NA
+bdat.l$doy[bdat.l$doy==365]<-NA
 
 #plot
 #gray #bdat.g[which(bdat.g$side=="dorsal"),]
@@ -92,16 +101,28 @@ gdat<- bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[2] & bdat.g
 gdat<- gdat[, c("grayscale","doy","lat","wing","side","year","lr")]
 gdat<- na.omit(gdat)
 
-ggplot(bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[2]),], aes(x=doy, y=grayscale, color=lr)) + 
-  facet_grid(wing~side)+
-  geom_point()+geom_smooth(method="lm")+theme_bw()+scale_colour_manual(values=colors)
+plot1<- ggplot(bdat.g[which(bdat.g$species== c("P. occidentalis","P. rapae")[1]),], aes(x=doy, y=grayscale, color=lr)) + 
+  facet_grid(wing~side)+ ylab("grayscale (%)")+ xlab("day of year")+
+  geom_point()+geom_smooth(method="lm")+theme_bw(base_size = 16)+scale_colour_manual(values=colors)
+
+pdf("Poccidentalis_gray.pdf",height = 8, width = 8)
+plot1
+dev.off()
 
 mod= lm(grayscale ~ doy*lat*wing*year+lr, data= gdat) 
 anova(mod)
 
-plot_model(mod, type = "pred", terms = c("doy","year"), show.data=TRUE)
-plot_model(mod, type = "pred", terms = c("doy","lat"), show.data=TRUE)
-plot_model(mod, type = "pred", terms = c("lat","year"), show.data=TRUE)
+pm.lat<- plot_model(mod, type = "pred", terms = c("doy","lat"), show.data=FALSE, title="")
+pm.yr<- plot_model(mod, type = "pred", terms = c("doy","year"), show.data=FALSE, title="")
+
+pm.plot<- pm.yr+ theme_bw(base_size=18)+
+  scale_color_viridis_d()+
+  scale_fill_viridis_d()+
+  xlab("day of year")
+
+pdf("Prapae_graymod.pdf",height = 8, width = 8)
+pm.plot
+dev.off()
 
 #length
 ggplot(bdat.l[which(bdat.l$species== c("P. occidentalis","P. rapae")[2]),], aes(x=doy, y=length, color=lr)) + 
