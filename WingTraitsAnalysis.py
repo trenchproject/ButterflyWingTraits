@@ -19,6 +19,35 @@ from PIL import Image
 
 #load functions
 def find_longest_axis(mask):
+    """
+    Find the longest axis (maximum distance between any two points) in a binary mask.
+    
+    This function identifies the longest possible straight line that can be drawn
+    within a binary mask, typically representing a butterfly wing. It works by finding
+    the maximum distance between any two points on the contour of the mask.
+    
+    Parameters:
+    -----------
+    mask : numpy.ndarray
+        A binary image (mask) where the object of interest (butterfly wing) is 
+        represented by non-zero pixels. The mask should be a single-channel 
+        grayscale image.
+    
+    Returns:
+    --------
+    longest_axis : float
+        The length of the longest axis in pixels.
+    endpoints : tuple
+        A tuple containing two points (p1, p2), where each point is represented as
+        a numpy array [x, y]. These points are the endpoints of the longest axis.
+    
+    Example:
+    --------
+    >>> axis_length, (point1, point2) = find_longest_axis(wing_mask)
+    >>> print(f"The longest axis is {axis_length:.2f} pixels")
+    >>> print(f"From point {point1} to point {point2}")
+    """
+    
     # Ensure the mask is binary
     _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
     
@@ -44,6 +73,34 @@ def find_longest_axis(mask):
     return longest_axis, (p1, p2)
 
 def plot_longest_axis(gray_image, mask):
+    """
+    Visualize the longest axis of a butterfly wing on an image.
+    
+    This function creates a visualization showing the original grayscale image,
+    the contour of the wing mask, and the longest axis drawn as a red line.
+    
+    Parameters:
+    -----------
+    gray_image : numpy.ndarray
+        The original grayscale image of the butterfly wing.
+    mask : numpy.ndarray
+        A binary mask where the butterfly wing is represented by non-zero pixels.
+        This should be a single-channel grayscale image.
+    
+    Returns:
+    --------
+    None
+        The function displays the plot but does not return any values.
+    
+    Notes:
+    ------
+    - The function uses find_longest_axis() to calculate the longest axis of the wing.
+    - The grayscale image is converted to RGB for visualization purposes.
+    - The wing contour is plotted in blue.
+    - The longest axis is plotted as a red line.
+    - The plot includes a title showing the length of the longest axis in pixels.
+    """
+    
     # Find the longest axis
     longest_axis, (p1, p2) = find_longest_axis(mask)
     
@@ -201,6 +258,38 @@ def place_measurement_circle(wing_mask, p1, p2, side='left', debug=False):
     return (best_center[0], best_center[1], int(radius)) 
 
 def plot_measurement_circle(gray_image, mask, side):
+    """
+    This function creates a visualization showing the original grayscale image,
+    the contour of the wing mask, the longest axis, and a measurement circle
+    positioned at a specific location relative to the wing.
+    
+    Parameters:
+    -----------
+    gray_image : numpy.ndarray
+        The original grayscale image of the butterfly wing.
+    mask : numpy.ndarray
+        A binary mask where the butterfly wing is represented by non-zero pixels.
+        This should be a single-channel grayscale image.
+    side : str
+        Specifies which side of the wing to place the measurement circle.
+        Expected values depend on the implementation of place_measurement_circle().
+        Typically values might be 'left', 'right', 'top', or 'bottom'.
+    
+    Returns:
+    --------
+    None
+        The function displays the plot but does not return any values.
+    Notes:
+    ------
+    - The function first calculates the longest axis of the wing using find_longest_axis().
+    - It then positions a measurement circle using place_measurement_circle().
+    - The radius of the measurement circle is set to 12.5% of the longest axis length.
+    - The grayscale image is converted to RGB for visualization purposes.
+    - The wing contour is plotted in blue.
+    - The longest axis is plotted as a red line.
+    - The measurement circle is plotted as a green circle.
+    """
+    
     # Find the longest axis
     longest_axis, (p1, p2) = find_longest_axis(mask)
 
@@ -269,6 +358,32 @@ def estimate_grayscale_in_circle(image, center, radius):
         raise ValueError("Circle does not contain any valid pixels.")
 
 def plot_measurement_circle_return(gray_image, mask, side):
+    """
+    This function generates a plot showing the original grayscale image, the contour of the wing mask,
+    the longest axis, and a measurement circle positioned at a specific location relative to the wing.
+    Unlike plot_measurement_circle(), this function returns the figure and axis objects instead of 
+    displaying the plot directly.
+    
+    Parameters:
+    -----------
+    gray_image : numpy.ndarray
+        The original grayscale image of the butterfly wing.
+    mask : numpy.ndarray
+        A binary mask where the butterfly wing is represented by non-zero pixels.
+        This should be a single-channel grayscale image.
+    side : str
+        Specifies which side of the wing to place the measurement circle.
+        Expected values depend on the implementation of place_measurement_circle().
+        Typically values might be 'left', 'right', 'top', or 'bottom'.
+    
+    Returns:
+    --------
+    fig : matplotlib.figure.Figure
+        The figure object containing the visualization.
+    ax : matplotlib.axes.Axes
+        The axes object containing the plot elements.
+    """
+    
     # Find the longest axis
     longest_axis, (p1, p2) = find_longest_axis(mask)
 
@@ -303,6 +418,37 @@ def plot_measurement_circle_return(gray_image, mask, side):
     return fig, ax  # Return figure and axis objects
 
 def process_images_with_masks(image_folder, output_folder):
+    """
+    Create and return a visualization of a butterfly wing with its longest axis and measurement circle.
+    
+    This function generates a plot showing the original grayscale image, the contour of the wing mask,
+    the longest axis, and a measurement circle positioned at a specific location relative to the wing.
+    Unlike plot_measurement_circle(), this function returns the figure and axis objects instead of 
+    displaying the plot directly.
+    
+    Parameters:
+    -----------
+    gray_image : numpy.ndarray
+        The original grayscale image of the butterfly wing.
+    mask : numpy.ndarray
+        A binary mask where the butterfly wing is represented by non-zero pixels.
+        This should be a single-channel grayscale image.
+    side : str
+        Specifies which side of the wing to place the measurement circle.
+        Expected values depend on the implementation of place_measurement_circle().
+        Typically values might be 'left', 'right', 'top', or 'bottom'.
+
+    Notes:
+    ------
+    - The function first calculates the longest axis of the wing using find_longest_axis().
+    - It then positions a measurement circle using place_measurement_circle().
+    - The radius of the measurement circle is set to 12.5% of the longest axis length.
+    - The grayscale image is converted to RGB for visualization purposes.
+    - The wing contour is plotted in blue.
+    - The longest axis is plotted as a red line.
+    - The measurement circle is plotted as a green circle.
+    """
+    
     ## Create output folder if it doesn't exist
     #if not os.path.exists(output_folder):
     #    os.makedirs(output_folder)
